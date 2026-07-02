@@ -1,0 +1,187 @@
+{% extends 'transport/base.html' %}
+{% block title %}{{ title }} - {{company.name}}{% endblock %}
+{% block content %}
+<div class="topbar no-print">
+  <h5 class="page-title"><i class="bi bi-receipt me-2"></i>{{ title }}</h5>
+  <a href="{% url 'voucher_list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+
+{% if form.errors %}
+<div class="alert alert-danger">
+    <strong>Please correct the following errors:</strong>
+    <ul class="mb-0 mt-2">
+        {% for field in form %}
+            {% for error in field.errors %}
+                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+
+        {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<form method="post">{% csrf_token %}
+<div class="row g-3">
+  <div class="col-md-8">
+
+    <!-- Parties & Stops -->
+    <div class="card mb-3">
+      <div class="card-header">Consigner & Consignee</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Consigner <span class="text-danger">*</span></label>
+            {{ form.consigner }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Consignee <span class="text-danger">*</span></label>
+            {{ form.consignee }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">From <span class="text-muted small">(pickup stop)</span></label>
+            {{ form.from_stop }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">To <span class="text-muted small">(delivery stop)</span></label>
+            {{ form.to_stop }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delivery Details -->
+    <div class="card mb-3">
+      <div class="card-header">Delivery Details</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+            {{ form.date }}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Invoice No <span class="text-danger">*</span></label>
+            {{ form.invoice_no }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Route <span class="text-danger">*</span></label>
+            {{ form.route }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">No. of Boxes <span class="text-danger">*</span></label>
+            {{ form.no_of_boxes }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Amount (&#8377;) <span class="text-danger">*</span></label>
+            {{ form.amount }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Payment Status <span class="text-danger">*</span></label>
+            <div class="d-flex gap-4 align-items-center mt-1">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="cb_paid" {% if not form.to_pay.value %}checked{% endif %}>
+                <label class="form-check-label fw-semibold" for="cb_paid">Paid</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="cb_to_pay" {% if form.to_pay.value %}checked{% endif %}>
+                <label class="form-check-label fw-semibold" for="cb_to_pay">To Pay</label>
+              </div>
+            </div>
+            <input type="hidden" name="to_pay" id="id_to_pay" value="{% if form.to_pay.value %}on{% endif %}">
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Optional Fields -->
+    <div class="card">
+      <div class="card-header" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#optFields">
+        <i class="bi bi-chevron-down me-1"></i>Optional Fields
+      </div>
+      <div class="collapse" id="optFields">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Delivery At</label>{{ form.delivery_at }}</div>
+            <div class="col-md-6"><label class="form-label">No. of Articles</label>{{ form.no_of_articles }}</div>
+            <div class="col-md-4"><label class="form-label">Approx Weight (Kg)</label>{{ form.approx_weight_kg }}</div>
+            <div class="col-md-4"><label class="form-label">Bill Amount (&#8377;)</label>{{ form.bill_amount }}</div>
+            <div class="col-md-4"><label class="form-label">Service Tax (&#8377;)</label>{{ form.service_tax }}</div>
+            <div class="col-md-6"><label class="form-label">Declared Value (&#8377;)</label>{{ form.declared_value }}</div>
+            <div class="col-md-6"><label class="form-label">Remarks</label>{{ form.remarks }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right panel -->
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">Voucher Info</div>
+      <div class="card-body">
+        <p class="text-muted small mb-1">LR Number</p>
+        <p class="fw-bold fs-5">{% if obj %}{{ obj.lr_no }}{% else %}<span class="text-muted">Auto-assigned</span>{% endif %}</p>
+        <p class="text-muted small mb-1">Booking Clerk</p>
+        <p class="fw-bold"><i class="bi bi-person-circle me-1"></i>{{ request.user.get_full_name|default:request.user.username }}</p>
+        <p class="text-muted small mb-1 mt-2">Note</p>
+        <p class="text-muted small">Booking clerk is set automatically and cannot be changed.</p>
+        <hr>
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Voucher</button>
+          <a href="{% url 'voucher_list' %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </div>
+    </div>
+
+    {% if obj %}
+    <div class="card mt-3">
+      <div class="card-body">
+        <p class="text-muted small mb-1">Created</p>
+        <p class="small">{{ obj.created_at|date:"d M Y, H:i" }}</p>
+        <p class="text-muted small mb-1">Last Updated</p>
+        <p class="small mb-0">{{ obj.updated_at|date:"d M Y, H:i" }}</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const cbPaid = document.getElementById('cb_paid');
+  const cbToPay = document.getElementById('cb_to_pay');
+  const hiddenField = document.getElementById('id_to_pay');
+
+  // Ensure at least one is always checked on load
+  if (!cbPaid.checked && !cbToPay.checked) {
+    cbToPay.checked = true;
+    hiddenField.value = 'on';
+  }
+
+  cbPaid.addEventListener('change', function() {
+    if (this.checked) {
+      cbToPay.checked = false;
+      hiddenField.value = '';  // Paid = to_pay is False
+    } else {
+      cbToPay.checked = true;
+      hiddenField.value = 'on';  // To Pay = to_pay is True
+    }
+  });
+
+  cbToPay.addEventListener('change', function() {
+    if (this.checked) {
+      cbPaid.checked = false;
+      hiddenField.value = 'on';  // To Pay = to_pay is True
+    } else {
+      cbPaid.checked = true;
+      hiddenField.value = '';  // Paid = to_pay is False
+    }
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'transport/base.html' %}
+{% block title %}{{ role_label }}s - {{company.name}}{% endblock %}
+{% block content %}
+<div class="topbar no-print">
+  <h5 class="page-title"><i class="bi bi-people me-2"></i>{{ role_label }}s</h5>
+  <a href="{% url role|add:'_add' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Add {{ role_label }}</a>
+</div>
+<ul class="nav nav-tabs mb-3 no-print">
+  <li class="nav-item"><a class="nav-link {% if role == 'consigner' %}active{% endif %}" href="{% url 'consigner_list' %}">Consigners</a></li>
+  <li class="nav-item"><a class="nav-link {% if role == 'consignee' %}active{% endif %}" href="{% url 'consignee_list' %}">Consignees</a></li>
+</ul>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Name</th><th>Role</th><th>City</th><th>Phone</th><th>GST No</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for p in parties %}
+      <tr>
+        <td><strong>{{ p.name }}</strong></td>
+        <td>{{ p.get_role_display }}</td>
+        <td>{{ p.city|default:"-" }}</td>
+        <td>{{ p.phone|default:"-" }}</td>
+        <td>{{ p.gst_no|default:"-" }}</td>
+        <td>{% if p.active %}<span class="badge-active">Active</span>{% else %}<span class="badge-inactive">Inactive</span>{% endif %}</td>
+        <td>
+          <div class="d-flex gap-2">
+            <a href="{% url role|add:'_edit' p.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Edit</a>
+            {% if request.user.is_staff %}
+            <form method="post" action="{% url role|add:'_delete' p.pk %}" onsubmit="return confirm('Delete {{ role_label|lower }} {{ p.name }}?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Delete</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="7" class="text-center text-muted py-4">No {{ role_label|lower }}s yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% with page_obj=parties %}{% include 'transport/includes/pagination.html' %}{% endwith %}
+  </div>
+</div>
+{% endblock %}

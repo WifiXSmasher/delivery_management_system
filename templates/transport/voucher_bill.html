@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LR-{{ voucher.lr_no }} Bill - {{company.name}}</title>
+<style>
+body{font-family:Arial,sans-serif;color:#111;margin:24px;font-size:13px}
+.actions{max-width:900px;margin:0 auto 14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.actions a,.actions button{border:1px solid #222;background:#fff;color:#111;padding:7px 12px;text-decoration:none;border-radius:4px;cursor:pointer;font-size:13px}
+.actions button{background:#1a2340;color:#fff;border-color:#1a2340}
+.bill{max-width:900px;margin:0 auto;border:1px solid #222}
+.header{display:flex;justify-content:space-between;gap:20px;padding:16px 18px;border-bottom:1px solid #222}
+.company h1{font-size:22px;margin:0 0 4px}
+.company div,.meta div{line-height:1.45}
+.meta{text-align:right}
+.title{text-align:center;font-weight:bold;font-size:16px;padding:8px;border-bottom:1px solid #222;background:#f3f3f3}
+.section{padding:14px 18px;border-bottom:1px solid #222}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 24px}
+.label{font-size:11px;text-transform:uppercase;color:#555;margin-bottom:3px}
+.value{font-weight:bold;min-height:18px}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #222;padding:8px;text-align:left;vertical-align:top}
+th{background:#f3f3f3;font-size:12px}
+.text-end{text-align:right}
+.footer{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:18px}
+.box{border:1px solid #222;min-height:96px;padding:8px;display:flex;flex-direction:column;justify-content:space-between}
+.signature-line{border-top:1px solid #222;margin-top:34px;padding-top:6px;font-weight:bold}
+.notice{border-top:1px solid #222;padding:9px 18px;font-size:12px;font-weight:bold;text-align:center}
+.muted{color:#666}
+@media print{body{margin:0}.actions{display:none}.bill{border:none}}
+</style>
+</head>
+<body>
+<div class="actions">
+  <a href="{% url 'voucher_detail' voucher.pk %}">Back</a>
+  <button onclick="window.print()">Print / Save PDF</button>
+</div>
+<div class="bill">
+  <div class="header">
+    <div class="company">
+      <h1>{{company.name }}</h1>
+      <div>{{company.address_line_1}}</div>
+      <div>{{company.address_line_2}}</div>
+      <div>{{ company.gst_no }}</div>
+      <div>{{ company.mobiles_display }}</div>
+    </div>
+    <div class="meta">
+      <div><strong>LR No:</strong> {{ voucher.lr_no }}</div>
+      <div><strong>Date:</strong> {{ voucher.date|date:"d/m/Y" }}</div>
+      <div><strong>Bill Type:</strong> Delivery Voucher</div>
+    </div>
+  </div>
+
+  <div class="title">DELIVERY VOUCHER / BILL</div>
+
+  <div class="section">
+    <div class="grid">
+      <div>
+        <div class="label">Consigner</div>
+        <div class="value">{{ voucher.consigner }}</div>
+      </div>
+      <div>
+        <div class="label">Consignee</div>
+        <div class="value">{{ voucher.consignee }}</div>
+      </div>
+      <div>
+        <div class="label">From</div>
+        <div class="value">{{ voucher.from_stop|default:"-" }}</div>
+      </div>
+      <div>
+        <div class="label">Destination</div>
+        <div class="value">{{ voucher.to_stop|default:voucher.delivery_at|default:"-" }}</div>
+      </div>
+      
+    </div>
+  </div>
+
+  <div class="section">
+    <table>
+      <thead>
+        <tr>
+          <th>Invoice No</th>
+          <th class="text-end">Boxes</th>
+          <th class="text-end">Articles</th>
+          <th class="text-end">Approx Weight</th>
+          <th class="text-end">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{ voucher.invoice_no }}</td>
+          <td class="text-end">{{ voucher.no_of_boxes }}</td>
+          <td class="text-end">{{ voucher.no_of_articles|default:"-" }}</td>
+          <td class="text-end">{% if voucher.approx_weight_kg %}{{ voucher.approx_weight_kg }} kg{% else %}-{% endif %}</td>
+          <td class="text-end">Rs. {{ voucher.amount }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="grid">
+      <div>
+        <div class="label">Payment Status</div>
+        <div class="value">{% if voucher.to_pay %}TO PAY{% else %}PAID{% endif %}</div>
+      </div>
+      <div>
+        <div class="label">Bill Amount</div>
+        <div class="value">{% if voucher.bill_amount %}Rs. {{ voucher.bill_amount }}{% else %}-{% endif %}</div>
+      </div>
+      <div>
+        <div class="label">Declared Value</div>
+        <div class="value">{% if voucher.declared_value %}Rs. {{ voucher.declared_value }}{% else %}-{% endif %}</div>
+      </div>
+      <div>
+        <div class="label">Service Tax</div>
+        <div class="value">{% if voucher.service_tax %}Rs. {{ voucher.service_tax }}{% else %}-{% endif %}</div>
+      </div>
+      <div>
+        <div class="label">Booking Clerk</div>
+        <div class="value">{{ voucher.booking_clerk.get_full_name|default:voucher.booking_clerk.username }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="label">Remarks / Extra Details</div>
+    <div class="value">{{ voucher.remarks|default:"-" }}</div>
+  </div>
+
+  <div class="footer">
+    <div class="box">
+      <div class="label">Receiver Name / Notes</div>
+      <div class="muted">Received Goods with good condition</div>
+      <div class="signature-line">Consignee Signature</div>
+    </div>
+    <div class="box">
+      <div class="label">Booking Clerk Signature</div>
+      <div class="signature-line">For KAP Transport</div>
+    </div>
+  </div>
+  <div class="notice">
+    If any delivered goods are lost, misplaced, or damaged, the customer should be informed within 7 days.
+  </div>
+</div>
+</body>
+</html>

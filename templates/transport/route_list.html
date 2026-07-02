@@ -1,0 +1,39 @@
+{% extends 'transport/base.html' %}
+{% block title %}Routes - {{company.name}}{% endblock %}
+{% block content %}
+<div class="topbar no-print">
+  <h5 class="page-title"><i class="bi bi-signpost-2 me-2"></i>Routes</h5>
+  <a href="{% url 'route_add' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Add Route</a>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Route Name</th><th>From</th><th>To</th><th>Stops</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for r in routes %}
+      <tr>
+        <td><strong>{{ r.name }}</strong></td>
+        <td>{{ r.from_stop|default:"-" }}</td>
+        <td>{{ r.to_stop|default:"-" }}</td>
+        <td>{{ r.locations_display|default:"-" }}</td>
+        <td>{% if r.active %}<span class="badge-active">Active</span>{% else %}<span class="badge-inactive">Inactive</span>{% endif %}</td>
+        <td>
+          <div class="d-flex gap-2">
+            <a href="{% url 'route_edit' r.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Edit</a>
+            {% if request.user.is_staff %}
+            <form method="post" action="{% url 'route_delete' r.pk %}" onsubmit="return confirm('Delete route {{ r.name }}?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Delete</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">No routes yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% with page_obj=routes %}{% include 'transport/includes/pagination.html' %}{% endwith %}
+  </div>
+</div>
+{% endblock %}

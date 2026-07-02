@@ -1,0 +1,105 @@
+{% extends 'transport/base.html' %}
+{% block title %}Monthly Report - {{company.name}}{% endblock %}
+{% block content %}
+<style>
+.report-header { background: #0d6efd !important; color: #fff !important; }
+.report-header h5, .report-header strong { color: #fff !important; }
+.report-table th, .report-table td { border: 1px solid #212529 !important; }
+.report-table thead th { background: #ffe066 !important; color: #111 !important; text-decoration: underline; text-underline-offset: 2px; }
+@media print {
+  .report-header, .report-table thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .report-table th, .report-table td { border-color: #000 !important; }
+}
+</style>
+<div class="topbar no-print">
+  <h5 class="page-title"><i class="bi bi-file-earmark-bar-graph me-2"></i>Monthly Activity Report</h5>
+  {% if vouchers %}
+  <button onclick="window.print()" class="btn btn-outline-secondary btn-sm"><i class="bi bi-printer me-1"></i>Print / Save PDF</button>
+  {% endif %}
+</div>
+
+<div class="card mb-3 no-print">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Month</label>{{ form.month }}
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold">Year</label>{{ form.year }}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Consigner</label>{{ form.consigner }}
+        {% if form.consigner.errors %}<div class="text-danger small">{{ form.consigner.errors|striptags }}</div>{% endif %}
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Generate Report</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if vouchers %}
+<div class="card">
+  <div class="card-header report-header">
+    <div class="d-flex justify-content-between align-items-start gap-3">
+      <div>
+        <h5 class="mb-1">{{company.name}}</h5>
+        <div>{{company.address_line_1}}</div>
+        <div>{{company.address_line_2}}</div>
+        <div>{{company.gst_no}}</div>
+        <div>Mob: {{company.mobiles_display}}</div>
+      </div>
+      <div class="text-end">
+        <div class="fw-bold">Monthly Activity Report</div>
+        <div>{{ month_label }}</div>
+        <div class="small mt-1">Consigner: <strong>{{ selected_consigner }}</strong></div>
+      </div>
+    </div>
+  </div>
+  <div class="px-3 py-2 border-bottom small text-muted">
+    Total entries: {{ vouchers|length }}
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm table-bordered table-hover mb-0 report-table">
+      <thead><tr>
+        <th style="width:120px;white-space:nowrap;text-decoration:underline">DATE</th>
+        <th style="text-decoration:underline">CONSIGNEE</th>
+        <th style="text-decoration:underline">LR No</th>
+        <th style="text-decoration:underline">INVOICE No</th>
+        <th class="text-center" style="text-decoration:underline">NO. OF BOX</th>
+        <th class="text-end" style="text-decoration:underline">BILL AMOUNT</th>
+        <th class="text-end" style="text-decoration:underline">AMOUNT</th>
+      </tr></thead>
+      <tbody>
+      {% for v in vouchers %}
+      <tr>
+        <td>{{ v.date|date:"d-m-Y" }}</td>
+        <td>
+          {{ v.consignee.name }}{% if v.to_stop %} to {{ v.to_stop }}{% elif v.delivery_at %} to {{ v.delivery_at }}{% endif %}
+        </td>
+        <td>{{ v.lr_no }}</td>
+        <td>{{ v.invoice_no }}</td>
+        <td class="text-center">{{ v.no_of_boxes }}</td>
+        <td class="text-end">{{ v.bill_amount|default:"-" }}</td>
+        <td class="text-end">{{ v.amount }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="fw-bold" style="border-top:2px solid #1a2340">
+          <td colspan="4" class="text-end">TOTAL</td>
+          <td class="text-center">{{ total_boxes }}</td>
+          <td class="text-end">{{ total_bill_amount }}</td>
+          <td class="text-end">{{ total_amount }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% elif report_requested %}
+<div class="card"><div class="card-body text-center text-muted py-5">
+  <i class="bi bi-inbox" style="font-size:2rem"></i>
+  <p class="mt-2">No vouchers found for {{ selected_consigner }} in {{ month_label }}.</p>
+</div></div>
+{% endif %}
+{% endblock %}

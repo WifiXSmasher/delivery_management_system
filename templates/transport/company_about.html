@@ -1,0 +1,52 @@
+{% extends 'transport/base.html' %}
+{% block title %}Company Info - {{company.name}}{% endblock %}
+{% block content %}
+<div class="topbar no-print">
+  <h5 class="page-title"><i class="bi bi-building me-2"></i>Company Information</h5>
+</div>
+<div class="row">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-pencil-square me-2"></i>Edit Company Details</div>
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
+            {% endif %}
+            {% if field.help_text %}
+            <div class="form-text">{{ field.help_text }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Changes</button>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-info-circle me-2"></i>Current Details</div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr><td class="text-muted fw-semibold" style="width:40%">Company Name</td><td>{{ company.name }}</td></tr>
+            <tr><td class="text-muted fw-semibold">Address Line 1</td><td>{{ company.address_line_1 }}</td></tr>
+            <tr><td class="text-muted fw-semibold">Address Line 2</td><td>{{ company.address_line_2 }}</td></tr>
+            <tr><td class="text-muted fw-semibold">GST Number</td><td>{{ company.gst_no }}</td></tr>
+            <tr><td class="text-muted fw-semibold">Mobile 1</td><td>{{ company.mobile_1 }}</td></tr>
+            <tr><td class="text-muted fw-semibold">Mobile 2</td><td>{{ company.mobile_2|default:"-" }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

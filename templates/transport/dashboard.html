@@ -1,0 +1,331 @@
+{% extends 'transport/base.html' %}
+{% block title %}Dashboard - {{ company.name|default:"KAP Transport" }}{% endblock %}
+
+{% block content %}
+
+<div class="topbar no-print">
+    <h5 class="page-title">
+        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+    </h5>
+
+    <a href="{% url 'voucher_add' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus me-1"></i>New Voucher
+    </a>
+</div>
+
+<!-- Main Statistics -->
+<div class="row g-3 mb-4">
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="number">{{ total_vouchers }}</div>
+            <div class="label">
+                <i class="bi bi-receipt me-1"></i>
+                Total Vouchers
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="number">{{ this_month }}</div>
+            <div class="label">
+                <i class="bi bi-calendar me-1"></i>
+                This Month
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="number">{{ total_consigners }}</div>
+            <div class="label">
+                <i class="bi bi-building me-1"></i>
+                Active Consigners
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="number">{{ total_consignees }}</div>
+            <div class="label">
+                <i class="bi bi-person-lines-fill me-1"></i>
+                Active Consignees
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Weekly & Monthly Sales Charts -->
+<div class="row g-3 mb-4">
+
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h6 class="mb-0 fw-bold">
+                    {% comment %} make the graph to bar graph  {% endcomment %}
+                    <i class="bi bi-graph-up me-2" style="color:#2ecc71"></i>
+                    Daily Sales (Last 7 Days)
+                </h6>
+            </div>
+            <div class="card-body">
+                <div style="height:300px;">
+                    <canvas id="weeklySalesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h6 class="mb-0 fw-bold">
+                    <i class="bi bi-graph-up me-2" style="color:#e67e22"></i>
+                    Monthly Sales (Last 12 Months)
+                </h6>
+            </div>
+            <div class="card-body">
+                <div style="height:300px;">
+                    <canvas id="monthlySalesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Consigner Analytics -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0 fw-bold">
+            <i class="bi bi-graph-up me-2"></i>
+            Consigner Analytics
+        </h6>
+    </div>
+
+    <div class="card-body">
+
+        <form method="get" class="row g-2 align-items-end">
+
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                    Select Consigner
+                </label>
+
+                {{ consigner_form.consigner }}
+            </div>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    View
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+{% if selected_consigner %}
+
+<div class="row g-3 mb-4">
+
+    <div class="col-md-6">
+        <div class="stat-card">
+            <div class="number">
+                {{ consigner_voucher_count }}
+            </div>
+            <div class="label">
+                <i class="bi bi-file-earmark-text me-1"></i>
+                Total Vouchers for {{ selected_consigner.name }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="stat-card">
+            <div class="number">
+                ₹{{ consigner_revenue }}
+            </div>
+            <div class="label">
+                <i class="bi bi-currency-rupee me-1"></i>
+                Total Revenue
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endif %}
+
+<!-- Top Consigners Graph -->
+<div class="card shadow-sm border-0 mb-4">
+
+    <div class="card-header bg-white">
+        <h6 class="mb-0 fw-bold">
+            <i class="bi bi-bar-chart-line me-2"></i>
+            Top 5 Consigners by Revenue
+        </h6>
+    </div>
+
+    <div class="card-body">
+
+        <div style="height:350px;">
+            <canvas id="topConsignerChart"></canvas>
+        </div>
+
+    </div>
+
+</div>
+{% comment %} 
+<!-- Recent Vouchers -->
+<div class="card shadow-sm border-0">
+
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold">
+            <i class="bi bi-clock-history me-2"></i>
+            Recent Vouchers
+        </h6>
+
+        <a href="{% url 'voucher_list' %}" class="btn btn-outline-primary btn-sm">
+            View All
+        </a>
+    </div>
+
+    <div class="card-body p-0">
+
+        <div class="table-responsive">
+
+            <table class="table table-hover mb-0">
+
+                <thead class="table-light">
+                    <tr>
+                        <th>LR No</th>
+                        <th>Date</th>
+                        <th>Consigner</th>
+                        <th>Consignee</th>
+                        <th>Route</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for voucher in recent %}
+                    <tr>
+                        <td>{{ voucher.lr_no }}</td>
+                        <td>{{ voucher.date|date:"d-m-Y" }}</td>
+                        <td>{{ voucher.consigner }}</td>
+                        <td>{{ voucher.consignee }}</td>
+                        <td>{{ voucher.route }}</td>
+                        <td>₹{{ voucher.amount }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            No vouchers found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div> {% endcomment %}
+{% comment %} 
+    </div>
+
+</div> {% endcomment %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Daily Sales Line Chart (green) ────────────────────────────────────
+    const dailyCtx = document.getElementById('weeklySalesChart');
+    new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: {{ daily_labels|safe }},
+            datasets: [{
+                label: 'Daily Sales (₹)',
+                data: {{ daily_values|safe }},
+                borderColor: '#2ecc71',
+                backgroundColor: 'rgba(46, 204, 113, 0.12)',
+                borderWidth: 2.5,
+                pointBackgroundColor: '#2ecc71',
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                tension: 0.35,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: v => '₹' + v.toLocaleString() } },
+                x: { ticks: { maxRotation: 45, font: { size: 10 } } }
+            }
+        }
+    });
+
+    // ── Monthly Sales Bar Chart (orange) ───────────────────────────────────
+    const monthlyCtx = document.getElementById('monthlySalesChart');
+    new Chart(monthlyCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ monthly_labels|safe }},
+            datasets: [{
+                label: 'Monthly Sales (₹)',
+                data: {{ monthly_values|safe }},
+                backgroundColor: 'rgba(230, 126, 34, 0.75)',
+                borderColor: '#e67e22',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: v => '₹' + v.toLocaleString() } },
+                x: { ticks: { font: { size: 11 } } }
+            }
+        }
+    });
+
+    // ── Top Consigners Bar Chart ─────────────────────────────────────────
+    const labels = {{ top_consigner_labels|safe }};
+    const values = {{ top_consigner_values|safe }};
+    const ctx = document.getElementById('topConsignerChart');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Revenue',
+                data: values,
+                backgroundColor: '#0d6efd',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+});
+</script>
+
+{% endblock %}

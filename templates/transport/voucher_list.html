@@ -1,0 +1,84 @@
+{% extends 'transport/base.html' %}
+{% block title %}Vouchers - {{company.name}}{% endblock %}
+{% block content %}
+<div class="topbar no-print">
+  <h5 class="page-title"><i class="bi bi-list-ul me-2"></i>All Vouchers</h5>
+  <div class="d-flex gap-2">
+    <a href="{% url 'voucher_download' %}?{{ request.GET.urlencode }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-download me-1"></i>Download CSV</a>
+    <a href="{% url 'voucher_add' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>New Voucher</a>
+  </div>
+</div>
+<div class="card mb-3 no-print">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-2"><label class="form-label small"><b>Consigner</b></label>
+        <select name="consigner" class="form-select form-select-sm">
+          <option value="">All Consigners</option>
+          {% for c in consigner_parties %}
+          <option value="{{ c.pk }}" {% if q_consigner == c.pk|stringformat:"d" %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select></div>
+      <div class="col-md-2"><label class="form-label small"><b>From Date</b></label>
+        <input type="date" name="from_date" class="form-control form-control-sm" value="{{ q_from_date }}"></div>
+      <div class="col-md-2"><label class="form-label small"><b>To Date</b></label>
+        <input type="date" name="to_date" class="form-control form-control-sm" value="{{ q_to_date }}"></div>
+      <div class="col-md-2"><label class="form-label small"><b>LR No</b></label>
+        <input type="text" name="lr" class="form-control form-control-sm" value="{{ q_lr }}" placeholder="LR number..."></div>
+      <div class="col-md-2"><label class="form-label small"><b>Payment Status</b></label>
+        <select name="payment_status" class="form-select form-select-sm">
+          <option value="">All</option>
+          <option value="paid" {% if q_payment_status == "paid" %}selected{% endif %}>Paid</option>
+          <option value="to_pay" {% if q_payment_status == "to_pay" %}selected{% endif %}>To Pay</option>
+        </select></div>
+      <div class="col-md-2"><button type="submit" class="btn btn-secondary btn-sm w-100">Filter</button></div>
+    </form>
+  </div>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover table-sm mb-0">
+      <thead><tr>
+        <th>Date</th><th>LR No</th><th>Consigner</th><th>Consignee</th><th>From</th><th>To</th><th>Route</th><th>Invoice</th><th>Boxes</th><th class="text-end">Amount</th><th>Status</th><th>Notes / Extra Data</th><th class="no-print">Actions</th>
+      </tr></thead>
+      <tbody>
+      {% for v in vouchers %}
+      <tr>
+        <td>{{ v.date|date:"d/m/Y" }}</td>
+        <td><a href="{% url 'voucher_detail' v.pk %}"><strong>{{ v.lr_no }}</strong></a></td>
+        <td>{{ v.consigner }}</td>
+        <td>{{ v.consignee }}</td>
+        <td>{{ v.from_stop|default:"-" }}</td>
+        <td>{{ v.to_stop|default:"-" }}</td>
+        <td>{{ v.route }}</td>
+        <td>{{ v.invoice_no }}</td>
+        <td>{{ v.no_of_boxes }}</td>
+        <td class="text-end">&#8377;{{ v.amount }}</td>
+        <td>
+          {% if v.to_pay %}
+            <span class="badge bg-warning text-dark">To Pay</span>
+          {% else %}
+            <span class="badge bg-success">Paid</span>
+          {% endif %}
+        </td>
+        <td>{{ v.remarks|default:""|truncatechars:40 }}</td>
+        <td class="no-print">
+          <div class="d-flex gap-1">
+            <a href="{% url 'voucher_bill_download' v.pk %}" class="btn btn-sm btn-outline-secondary" title="Print or save bill PDF"><i class="bi bi-printer"></i></a>
+            <a href="{% url 'voucher_edit' v.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit voucher"><i class="bi bi-pencil"></i></a>
+            {% if request.user.is_staff %}
+            <form method="post" action="{% url 'voucher_delete' v.pk %}" onsubmit="return confirm('Delete voucher LR-{{ v.lr_no }}?');" style="display:inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Voucher"><i class="bi bi-trash"></i></button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="13" class="text-center text-muted py-4">No vouchers found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% with page_obj=vouchers %}{% include 'transport/includes/pagination.html' %}{% endwith %}
+  </div>
+</div>
+{% endblock %}

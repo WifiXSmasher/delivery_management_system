@@ -1,0 +1,36 @@
+{% extends 'transport/base.html' %}
+{% block title %}Stops - {{company.name}}{% endblock %}
+{% block content %}
+<div class="topbar no-print">
+  <h5 class="page-title"><i class="bi bi-geo-alt me-2"></i>Stops</h5>
+  <a href="{% url 'stop_add' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Add Stop</a>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Stop Name</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for s in stops %}
+      <tr>
+        <td><strong>{{ s.name }}</strong></td>
+        <td>{% if s.active %}<span class="badge-active">Active</span>{% else %}<span class="badge-inactive">Inactive</span>{% endif %}</td>
+        <td>
+          <div class="d-flex gap-2">
+            <a href="{% url 'stop_edit' s.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Edit</a>
+            {% if request.user.is_staff %}
+            <form method="post" action="{% url 'stop_delete' s.pk %}" onsubmit="return confirm('Delete stop {{ s.name }}?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Delete</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="3" class="text-center text-muted py-4">No stops yet. Add your first stop.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% with page_obj=stops %}{% include 'transport/includes/pagination.html' %}{% endwith %}
+  </div>
+</div>
+{% endblock %}

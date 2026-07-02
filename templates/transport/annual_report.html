@@ -1,0 +1,109 @@
+{% extends 'transport/base.html' %}
+{% block title %}Annual Report {{ selected_year }} - {{ company.name }}{% endblock %}
+{% block content %}
+<div class="topbar no-print">
+  <h5 class="page-title"><i class="bi bi-calendar3 me-2"></i>Annual Report</h5>
+  <button onclick="window.print()" class="btn btn-outline-secondary btn-sm"><i class="bi bi-printer me-1"></i>Print / Save PDF</button>
+</div>
+
+<!-- Year Selector -->
+<div class="card mb-3 no-print">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Year</label>
+        <select name="year" class="form-select">
+          {% for yr in available_years %}
+          <option value="{{ yr }}" {% if yr == selected_year %}selected{% endif %}>{{ yr }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>View Report</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Annual Summary -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="number">{{ selected_year }}</div>
+      <div class="label"><i class="bi bi-calendar3 me-1"></i>Selected Year</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="number">₹{{ annual_total|floatformat:2 }}</div>
+      <div class="label"><i class="bi bi-currency-rupee me-1"></i>Total Revenue</div>
+    </div>
+  </div>
+</div>
+
+<!-- Annual Line Chart -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header bg-white">
+    <h6 class="mb-0 fw-bold">
+      <i class="bi bi-graph-up me-2" style="color:#8e44ad"></i>
+      Monthly Revenue Trend – {{ selected_year }}
+    </h6>
+  </div>
+  <div class="card-body">
+    <div style="height:400px;">
+      <canvas id="annualChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const ctx = document.getElementById('annualChart');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ annual_labels|safe }},
+            datasets: [{
+                label: 'Revenue (₹)',
+                data: {{ annual_values|safe }},
+                borderColor: '#8e44ad',
+                backgroundColor: 'rgba(142, 68, 173, 0.12)',
+                borderWidth: 3,
+                pointBackgroundColor: '#8e44ad',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 8,
+                tension: 0.35,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return '₹' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: v => '₹' + v.toLocaleString() }
+                },
+                x: {
+                    ticks: { font: { size: 12 } }
+                }
+            }
+        }
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'transport/base.html' %}
+{% block title %}{{ title }} - {{company.name}}{% endblock %}
+{% block content %}
+<div class="topbar no-print">
+  <h5 class="page-title"><i class="bi bi-person-gear me-2"></i>{{ title }}</h5>
+  <a href="{% url 'user_list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+
+<div class="row"><div class="col-md-7">
+<div class="card"><div class="card-body p-4">
+
+  {% if form.errors %}
+  <div class="alert alert-danger">
+      <strong>Please correct the following errors:</strong>
+      <ul class="mb-0 mt-2">
+          {% for field in form %}
+              {% for error in field.errors %}
+                  <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+              {% endfor %}
+          {% endfor %}
+
+          {% for error in form.non_field_errors %}
+              <li>{{ error }}</li>
+          {% endfor %}
+      </ul>
+  </div>
+  {% endif %}
+
+  <form method="post">{% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-6"><label class="form-label fw-semibold">Username *</label>{{ form.username }}</div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">{% if obj %}New Password{% else %}Password *{% endif %}</label>
+        {{ form.password }}
+        <div class="form-text">{{ form.password.help_text }}</div>
+      </div>
+      <div class="col-md-6"><label class="form-label fw-semibold">First Name</label>{{ form.first_name }}</div>
+      <div class="col-md-6"><label class="form-label fw-semibold">Last Name</label>{{ form.last_name }}</div>
+      <div class="col-12"><label class="form-label fw-semibold">Email</label>{{ form.email }}</div>
+      <div class="col-md-6"><div class="form-check mt-1">{{ form.is_staff }}<label class="form-check-label ms-2">Admin access</label></div></div>
+      <div class="col-md-6"><div class="form-check mt-1">{{ form.is_active }}<label class="form-check-label ms-2">Active</label></div></div>
+    </div>
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save User</button>
+      <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div></div>
+</div></div>
+{% endblock %}
