@@ -62,4 +62,7 @@ TIME_ZONE = 'Asia/Kolkata'
 USE_TZ = True
 USE_I18N = True
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # no can not change the logic this project is made to run locally ,

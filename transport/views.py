@@ -406,13 +406,26 @@ def filtered_vouchers(params):
         'consigner', 'consignee', 'route', 'from_stop', 'to_stop', 'booking_clerk'
     )
     q_consigner = params.get('consigner', '')
+    q_consignee = params.get('consignee', '')
+    q_booking_clerk = params.get('booking_clerk', '')
     q_from_date = params.get('from_date', '')
     q_to_date = params.get('to_date', '')
     q_lr = params.get('lr', '')
+    q_invoice_no = params.get('invoice_no', '')
     q_payment_status = params.get('payment_status', '')
     if q_consigner:
         try:
             vouchers = vouchers.filter(consigner_id=int(q_consigner))
+        except (ValueError, TypeError):
+            pass
+    if q_consignee:
+        try:
+            vouchers = vouchers.filter(consignee_id=int(q_consignee))
+        except (ValueError, TypeError):
+            pass
+    if q_booking_clerk:
+        try:
+            vouchers = vouchers.filter(booking_clerk_id=int(q_booking_clerk))
         except (ValueError, TypeError):
             pass
     if q_from_date:
@@ -421,15 +434,20 @@ def filtered_vouchers(params):
         vouchers = vouchers.filter(date__lte=q_to_date)
     if q_lr:
         vouchers = vouchers.filter(lr_no__icontains=q_lr)
+    if q_invoice_no:
+        vouchers = vouchers.filter(invoice_no__icontains=q_invoice_no)
     if q_payment_status == 'paid':
         vouchers = vouchers.filter(to_pay=False)
     elif q_payment_status == 'to_pay':
         vouchers = vouchers.filter(to_pay=True)
     return vouchers, {
         'q_consigner': q_consigner,
+        'q_consignee': q_consignee,
+        'q_booking_clerk': q_booking_clerk,
         'q_from_date': q_from_date,
         'q_to_date': q_to_date,
         'q_lr': q_lr,
+        'q_invoice_no': q_invoice_no,
         'q_payment_status': q_payment_status,
     }
 
@@ -440,7 +458,16 @@ def voucher_list(request):
     page_number = request.GET.get('page')
     vouchers = paginator.get_page(page_number)
     consigner_parties = Party.objects.filter(active=True, role__in=[Party.CONSIGNER, Party.BOTH])
-    return render(request, 'transport/voucher_list.html', {'vouchers': vouchers, 'consigner_parties': consigner_parties, **filters, 'company': CompanyProfile.load()})
+    consignee_parties = Party.objects.filter(active=True, role__in=[Party.CONSIGNEE, Party.BOTH])
+    booking_clerks = User.objects.filter(is_active=True).order_by('username')
+    return render(request, 'transport/voucher_list.html', {
+        'vouchers': vouchers,
+        'consigner_parties': consigner_parties,
+        'consignee_parties': consignee_parties,
+        'booking_clerks': booking_clerks,
+        **filters,
+        'company': CompanyProfile.load(),
+    })
 
 @login_required
 def voucher_download(request):
@@ -495,6 +522,33 @@ def voucher_delete(request, pk):
     voucher.delete()
     messages.success(request, f"Voucher LR-{lr_no} deleted successfully.")
     return redirect('voucher_list')
+
+
+@login_required
+def voucher_upload_image(request, pk):
+    voucher = get_object_or_404(DeliveryVoucher, pk=pk)
+    if request.method == 'POST' and request.FILES.get('signed_image'):
+        uploaded_file = request.FILES['signed_image']
+        # Validate file type
+        allowed_types = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']
+        if uploaded_file.content_type not in allowed_types:
+            messages.error(request, "Invalid file type. Please upload a JPEG, PNG, WebP, GIF, or PDF file.")
+            return redirect('voucher_detail', pk=pk)
+        # Delete old image if replacing
+        if voucher.signed_image:
+            voucher.signed_image.delete(save=False)
+        # Rename file to LRNO_CONSIGNER_CONSIGNEE.ext
+        import os, re
+        ext = os.path.splitext(uploaded_file.name)[1]  # e.g. .jpg, .pdf
+        safe_consigner = re.sub(r'[^\w]+', '-', str(voucher.consigner)).strip('-')
+        safe_consignee = re.sub(r'[^\w]+', '-', str(voucher.consignee)).strip('-')
+        uploaded_file.name = f"{voucher.lr_no}_{safe_consigner}_{safe_consignee}{ext}"
+        voucher.signed_image = uploaded_file
+        voucher.save()
+        messages.success(request, f"Signed delivery image uploaded for LR-{voucher.lr_no}.")
+    else:
+        messages.error(request, "No image file was provided.")
+    return redirect('voucher_detail', pk=pk)
 
 
 # ── Monthly Report ────────────────────────────────────────────────────────────

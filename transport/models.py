@@ -122,6 +122,7 @@ class DeliveryVoucher(models.Model):
     to_pay = models.BooleanField(default=True, help_text="True = To Pay, False = Paid")
     declared_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     remarks = models.TextField(blank=True)
+    signed_image = models.FileField(upload_to='signed_vouchers/', blank=True, null=True, help_text="Upload signed delivery voucher image or PDF")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

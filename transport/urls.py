@@ -36,6 +36,7 @@ urlpatterns = [
     path('vouchers/<int:pk>/download/', views.voucher_bill_download, name='voucher_bill_download'),
     path('vouchers/<int:pk>/', views.voucher_detail, name='voucher_detail'),
     path('vouchers/<int:pk>/edit/', views.voucher_edit, name='voucher_edit'),
+    path('vouchers/<int:pk>/upload-image/', views.voucher_upload_image, name='voucher_upload_image'),
     path('vouchers/<int:pk>/delete/', views.voucher_delete, name='voucher_delete'),
 
     path('report/', views.monthly_report, name='monthly_report'),
