@@ -171,6 +171,8 @@ class DeliveryVoucherForm(forms.ModelForm):
             'invoice_no': forms.TextInput(attrs={'class': 'form-control'}),
             'no_of_boxes': forms.NumberInput(attrs={'class': 'form-control'}),
             'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'auto_charge': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'extra_charge': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'bill_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'delivery_at': forms.TextInput(attrs={'class': 'form-control'}),
             'no_of_articles': forms.NumberInput(attrs={'class': 'form-control'}),
@@ -190,7 +192,7 @@ class DeliveryVoucherForm(forms.ModelForm):
         self.fields['route'].queryset = Route.objects.filter(active=True)
         self.fields['from_stop'].required = False
         self.fields['to_stop'].required = False
-        for f in ['delivery_at', 'no_of_articles', 'approx_weight_kg', 'service_tax', 'declared_value', 'remarks', 'bill_amount']:
+        for f in ['delivery_at', 'no_of_articles', 'approx_weight_kg', 'service_tax', 'declared_value', 'remarks', 'bill_amount', 'auto_charge', 'extra_charge']:
             self.fields[f].required = False
 
 

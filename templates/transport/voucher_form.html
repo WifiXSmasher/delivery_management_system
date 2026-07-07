@@ -77,6 +77,18 @@
             <label class="form-label fw-semibold">Amount (&#8377;) <span class="text-danger">*</span></label>
             {{ form.amount }}
           </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Auto Charge (&#8377;)</label>
+            {{ form.auto_charge }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Extra Charge (&#8377;)</label>
+            {{ form.extra_charge }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Total Amount (&#8377;)</label>
+            <input type="text" class="form-control" id="total_amount_display" readonly style="background:#e9ecef;font-weight:bold;" value="0.00">
+          </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold">Payment Status <span class="text-danger">*</span></label>
             <div class="d-flex gap-4 align-items-center mt-1">
@@ -182,6 +194,24 @@ document.addEventListener('DOMContentLoaded', function() {
       hiddenField.value = '';  // Paid = to_pay is False
     }
   });
+
+  // Live total_amount calculation
+  const amountField = document.getElementById('id_amount');
+  const autoChargeField = document.getElementById('id_auto_charge');
+  const extraChargeField = document.getElementById('id_extra_charge');
+  const totalDisplay = document.getElementById('total_amount_display');
+
+  function updateTotal() {
+    const amount = parseFloat(amountField.value) || 0;
+    const autoCharge = parseFloat(autoChargeField.value) || 0;
+    const extraCharge = parseFloat(extraChargeField.value) || 0;
+    totalDisplay.value = (amount + autoCharge + extraCharge).toFixed(2);
+  }
+
+  amountField.addEventListener('input', updateTotal);
+  autoChargeField.addEventListener('input', updateTotal);
+  extraChargeField.addEventListener('input', updateTotal);
+  updateTotal();  // Calculate on page load
 });
 </script>
 {% endblock %}

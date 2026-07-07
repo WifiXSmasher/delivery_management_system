@@ -51,6 +51,18 @@
         <p class="text-muted small mb-0">Amount</p>
         <p class="fw-bold mb-0">&#8377;{{ voucher.amount }}</p>
       </div>
+      {% if voucher.auto_charge %}<div class="col-md-3">
+        <p class="text-muted small mb-0">Auto Charge</p>
+        <p class="fw-bold mb-0">&#8377;{{ voucher.auto_charge }}</p>
+      </div>{% endif %}
+      {% if voucher.extra_charge %}<div class="col-md-3">
+        <p class="text-muted small mb-0">Extra Charge</p>
+        <p class="fw-bold mb-0">&#8377;{{ voucher.extra_charge }}</p>
+      </div>{% endif %}
+      <div class="col-md-3">
+        <p class="text-muted small mb-0">Total Amount</p>
+        <p class="fw-bold mb-0 text-primary" style="font-size:1.1em;">&#8377;{{ voucher.total_amount }}</p>
+      </div>
       <div class="col-md-3">
         <p class="text-muted small mb-0">Booking Clerk</p>
         <p class="fw-bold mb-0">{{ voucher.booking_clerk.get_full_name|default:voucher.booking_clerk.username }}</p>

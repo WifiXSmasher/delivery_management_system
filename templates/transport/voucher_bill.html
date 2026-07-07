@@ -84,6 +84,9 @@ th{background:#f3f3f3;font-size:12px}
           <th class="text-end">Articles</th>
           <th class="text-end">Approx Weight</th>
           <th class="text-end">Amount</th>
+          <th class="text-end">Auto Charge</th>
+          <th class="text-end">Extra Charge</th>
+          <th class="text-end">Total Amount</th>
         </tr>
       </thead>
       <tbody>
@@ -93,6 +96,9 @@ th{background:#f3f3f3;font-size:12px}
           <td class="text-end">{{ voucher.no_of_articles|default:"-" }}</td>
           <td class="text-end">{% if voucher.approx_weight_kg %}{{ voucher.approx_weight_kg }} kg{% else %}-{% endif %}</td>
           <td class="text-end">Rs. {{ voucher.amount }}</td>
+          <td class="text-end">{% if voucher.auto_charge %}Rs. {{ voucher.auto_charge }}{% else %}-{% endif %}</td>
+          <td class="text-end">{% if voucher.extra_charge %}Rs. {{ voucher.extra_charge }}{% else %}-{% endif %}</td>
+          <td class="text-end" style="font-weight:bold">Rs. {{ voucher.total_amount }}</td>
         </tr>
       </tbody>
     </table>

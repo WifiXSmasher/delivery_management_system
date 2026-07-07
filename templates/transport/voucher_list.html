@@ -46,6 +46,21 @@
           <option value="paid" {% if q_payment_status == "paid" %}selected{% endif %}>Paid</option>
           <option value="to_pay" {% if q_payment_status == "to_pay" %}selected{% endif %}>To Pay</option>
         </select></div>
+      <div class="col-md-3"><label class="form-label small"><b>Has Charges</b></label>
+        <div class="d-flex gap-3 mt-1">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="has_auto" value="1" id="flt_auto" {% if q_has_auto %}checked{% endif %}>
+            <label class="form-check-label small" for="flt_auto">Auto</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="has_extra" value="1" id="flt_extra" {% if q_has_extra %}checked{% endif %}>
+            <label class="form-check-label small" for="flt_extra">Extra</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="has_bill" value="1" id="flt_bill" {% if q_has_bill %}checked{% endif %}>
+            <label class="form-check-label small" for="flt_bill">Bill Amt</label>
+          </div>
+        </div></div>
       <div class="col-md-2"><button type="submit" class="btn btn-secondary btn-sm w-100">Filter</button></div>
     </form>
   </div>
@@ -54,7 +69,7 @@
   <div class="card-body p-0">
     <table class="table table-hover table-sm mb-0">
       <thead><tr>
-        <th>Date</th><th>LR No</th><th>Consigner</th><th>Consignee</th><th>From</th><th>To</th><th>Route</th><th>Invoice</th><th>Boxes</th><th class="text-end">Amount</th><th>Status</th><th>Notes / Extra Data</th><th class="no-print">Actions</th>
+        <th>Date</th><th>LR No</th><th>Consigner</th><th>Consignee</th><th>From</th><th>To</th><th>Route</th><th>Invoice</th><th>Boxes</th><th class="text-end">Amount</th><th class="text-end">Auto</th><th class="text-end">Extra</th><th class="text-end">Total</th><th>Status</th><th>Notes / Extra Data</th><th class="no-print">Actions</th>
       </tr></thead>
       <tbody>
       {% for v in vouchers %}
@@ -69,6 +84,9 @@
         <td>{{ v.invoice_no }}</td>
         <td>{{ v.no_of_boxes }}</td>
         <td class="text-end">&#8377;{{ v.amount }}</td>
+        <td class="text-end">{% if v.auto_charge %}&#8377;{{ v.auto_charge }}{% else %}-{% endif %}</td>
+        <td class="text-end">{% if v.extra_charge %}&#8377;{{ v.extra_charge }}{% else %}-{% endif %}</td>
+        <td class="text-end fw-bold">&#8377;{{ v.total_amount }}</td>
         <td>
           {% if v.to_pay %}
             <span class="badge bg-warning text-dark">To Pay</span>
@@ -96,7 +114,7 @@
           </div>
         </td>
       </tr>
-      {% empty %}<tr><td colspan="13" class="text-center text-muted py-4">No vouchers found.</td></tr>
+      {% empty %}<tr><td colspan="16" class="text-center text-muted py-4">No vouchers found.</td></tr>
       {% endfor %}
       </tbody>
     </table>

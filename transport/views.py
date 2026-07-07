@@ -9,7 +9,8 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, F, Value, DecimalField
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.conf import settings
 from .models import Party, Route, Stop, CompanyProfile, DeliveryVoucher
@@ -86,11 +87,19 @@ def dashboard(request):
         if selected_consigner:
             qs = DeliveryVoucher.objects.filter(consigner=selected_consigner)
             consigner_voucher_count = qs.count()
-            consigner_revenue = qs.aggregate(total=Sum('amount'))['total'] or 0
+            consigner_revenue = qs.aggregate(
+                total=Sum(
+                    F('amount') + Coalesce(F('auto_charge'), Value(0)) + Coalesce(F('extra_charge'), Value(0)),
+                    output_field=DecimalField()
+                )
+            )['total'] or 0
 
     top_consigners = list(
         DeliveryVoucher.objects.values('consigner__name')
-        .annotate(total_revenue=Sum('amount'))
+        .annotate(total_revenue=Sum(
+            F('amount') + Coalesce(F('auto_charge'), Value(0)) + Coalesce(F('extra_charge'), Value(0)),
+            output_field=DecimalField()
+        ))
         .order_by('-total_revenue')[:5]
     )
 
@@ -101,7 +110,10 @@ def dashboard(request):
         day = today - datetime.timedelta(days=i)
         total = DeliveryVoucher.objects.filter(
             date=day
-        ).aggregate(t=Sum('amount'))['t'] or 0
+        ).aggregate(t=Sum(
+            F('amount') + Coalesce(F('auto_charge'), Value(0)) + Coalesce(F('extra_charge'), Value(0)),
+            output_field=DecimalField()
+        ))['t'] or 0
         daily_labels.append(day.strftime('%a %d/%m'))
         daily_values.append(float(total))
 
@@ -116,7 +128,10 @@ def dashboard(request):
             m_year -= 1
         total = DeliveryVoucher.objects.filter(
             date__year=m_year, date__month=m_month
-        ).aggregate(t=Sum('amount'))['t'] or 0
+        ).aggregate(t=Sum(
+            F('amount') + Coalesce(F('auto_charge'), Value(0)) + Coalesce(F('extra_charge'), Value(0)),
+            output_field=DecimalField()
+        ))['t'] or 0
         monthly_labels.append(datetime.date(m_year, m_month, 1).strftime('%b %Y'))
         monthly_values.append(float(total))
 
@@ -413,6 +428,9 @@ def filtered_vouchers(params):
     q_lr = params.get('lr', '')
     q_invoice_no = params.get('invoice_no', '')
     q_payment_status = params.get('payment_status', '')
+    q_has_auto = params.get('has_auto', '')
+    q_has_extra = params.get('has_extra', '')
+    q_has_bill = params.get('has_bill', '')
     if q_consigner:
         try:
             vouchers = vouchers.filter(consigner_id=int(q_consigner))
@@ -440,6 +458,12 @@ def filtered_vouchers(params):
         vouchers = vouchers.filter(to_pay=False)
     elif q_payment_status == 'to_pay':
         vouchers = vouchers.filter(to_pay=True)
+    if q_has_auto:
+        vouchers = vouchers.filter(auto_charge__gt=0)
+    if q_has_extra:
+        vouchers = vouchers.filter(extra_charge__gt=0)
+    if q_has_bill:
+        vouchers = vouchers.filter(bill_amount__gt=0)
     return vouchers, {
         'q_consigner': q_consigner,
         'q_consignee': q_consignee,
@@ -449,6 +473,9 @@ def filtered_vouchers(params):
         'q_lr': q_lr,
         'q_invoice_no': q_invoice_no,
         'q_payment_status': q_payment_status,
+        'q_has_auto': q_has_auto,
+        'q_has_extra': q_has_extra,
+        'q_has_bill': q_has_bill,
     }
 
 @login_required
@@ -475,9 +502,9 @@ def voucher_download(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="vouchers.csv"'
     writer = csv.writer(response)
-    writer.writerow(['Date', 'LR No', 'Consigner', 'Consignee', 'From', 'To', 'Route', 'Invoice No', 'Boxes', 'Articles', 'Approx Weight Kg', 'Amount', 'Bill Amount', 'Delivery At', 'Payment Status', 'Declared Value', 'Remarks'])
+    writer.writerow(['Date', 'LR No', 'Consigner', 'Consignee', 'From', 'To', 'Route', 'Invoice No', 'Boxes', 'Articles', 'Approx Weight Kg', 'Amount', 'Auto Charge', 'Extra Charge', 'Total Amount', 'Bill Amount', 'Delivery At', 'Payment Status', 'Declared Value', 'Remarks'])
     for voucher in vouchers:
-        writer.writerow([voucher.date.strftime('%d-%m-%Y'), voucher.lr_no, voucher.consigner, voucher.consignee, voucher.from_stop or '', voucher.to_stop or '', voucher.route, voucher.invoice_no, voucher.no_of_boxes, voucher.no_of_articles or '', voucher.approx_weight_kg or '', voucher.amount, voucher.bill_amount or '', voucher.delivery_at, 'To Pay' if voucher.to_pay else 'Paid', voucher.declared_value or '', voucher.remarks])
+        writer.writerow([voucher.date.strftime('%d-%m-%Y'), voucher.lr_no, voucher.consigner, voucher.consignee, voucher.from_stop or '', voucher.to_stop or '', voucher.route, voucher.invoice_no, voucher.no_of_boxes, voucher.no_of_articles or '', voucher.approx_weight_kg or '', voucher.amount, voucher.auto_charge or 0, voucher.extra_charge or 0, voucher.total_amount, voucher.bill_amount or '', voucher.delivery_at, 'To Pay' if voucher.to_pay else 'Paid', voucher.declared_value or '', voucher.remarks])
     return response
 
 @login_required
@@ -557,7 +584,7 @@ def voucher_upload_image(request, pk):
 def monthly_report(request):
     today = timezone.now().date()
     form = ReportFilterForm(request.GET or None, initial={'month': today.month, 'year': today.year})
-    vouchers, total_amount, total_boxes, total_bill_amount, month_label, selected_consigner = [], 0, 0, 0, '', None
+    vouchers, total_amount, total_boxes, total_bill_amount, total_auto_charge, total_extra_charge, month_label, selected_consigner = [], 0, 0, 0, 0, 0, '', None
     report_requested = False
     if request.GET and form.is_valid():
         report_requested = True
@@ -566,12 +593,23 @@ def monthly_report(request):
         selected_consigner = form.cleaned_data['consigner']
         qs = DeliveryVoucher.objects.filter(date__year=year, date__month=month, consigner=selected_consigner).select_related('consigner', 'consignee', 'route', 'from_stop', 'to_stop', 'booking_clerk').order_by('date', 'lr_no')
         vouchers = qs
-        agg = qs.aggregate(ta=Sum('amount'), tb=Sum('no_of_boxes'), tba=Sum('bill_amount'))
+        agg = qs.aggregate(
+            ta=Sum(
+                F('amount') + Coalesce(F('auto_charge'), Value(0)) + Coalesce(F('extra_charge'), Value(0)),
+                output_field=DecimalField()
+            ),
+            tb=Sum('no_of_boxes'),
+            tba=Sum('bill_amount'),
+            t_auto=Sum('auto_charge'),
+            t_extra=Sum('extra_charge'),
+        )
         total_amount = agg['ta'] or 0
         total_boxes = agg['tb'] or 0
         total_bill_amount = agg['tba'] or 0
+        total_auto_charge = agg['t_auto'] or 0
+        total_extra_charge = agg['t_extra'] or 0
         month_label = datetime.date(year, month, 1).strftime('%B %Y')
-    return render(request, 'transport/report.html', {'form': form, 'vouchers': vouchers, 'total_amount': total_amount, 'total_boxes': total_boxes, 'total_bill_amount': total_bill_amount, 'month_label': month_label, 'selected_consigner': selected_consigner, 'report_requested': report_requested, 'company': CompanyProfile.load()})
+    return render(request, 'transport/report.html', {'form': form, 'vouchers': vouchers, 'total_amount': total_amount, 'total_boxes': total_boxes, 'total_bill_amount': total_bill_amount, 'total_auto_charge': total_auto_charge, 'total_extra_charge': total_extra_charge, 'month_label': month_label, 'selected_consigner': selected_consigner, 'report_requested': report_requested, 'company': CompanyProfile.load()})
 
 # ── Annual Report ─────────────────────────────────────────────────────────────
 
@@ -595,7 +633,10 @@ def annual_report(request):
     for m in range(1, 13):
         total = DeliveryVoucher.objects.filter(
             date__year=selected_year, date__month=m
-        ).aggregate(t=Sum('amount'))['t'] or 0
+        ).aggregate(t=Sum(
+            F('amount') + Coalesce(F('auto_charge'), Value(0)) + Coalesce(F('extra_charge'), Value(0)),
+            output_field=DecimalField()
+        ))['t'] or 0
         annual_labels.append(datetime.date(selected_year, m, 1).strftime('%b'))
         annual_values.append(float(total))
         annual_total += float(total)

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -112,6 +113,8 @@ class DeliveryVoucher(models.Model):
     #add mess for this also
     no_of_boxes = models.PositiveIntegerField()
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    auto_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0, blank=True)
+    extra_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0, blank=True)
     # add the message also for thiis 
     bill_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
@@ -129,6 +132,10 @@ class DeliveryVoucher(models.Model):
 
     class Meta:
         ordering = ['-date', '-id']
+
+    @property
+    def total_amount(self):
+        return (self.amount or Decimal('0')) + (self.auto_charge or Decimal('0')) + (self.extra_charge or Decimal('0'))
 
     def __str__(self):
         return f"LR-{self.lr_no}"

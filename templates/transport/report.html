@@ -69,6 +69,9 @@
         <th class="text-center" style="text-decoration:underline">NO. OF BOX</th>
         <th class="text-end" style="text-decoration:underline">BILL AMOUNT</th>
         <th class="text-end" style="text-decoration:underline">AMOUNT</th>
+        <th class="text-end" style="text-decoration:underline">AUTO CHARGE</th>
+        <th class="text-end" style="text-decoration:underline">EXTRA CHARGE</th>
+        <th class="text-end" style="text-decoration:underline">TOTAL AMOUNT</th>
       </tr></thead>
       <tbody>
       {% for v in vouchers %}
@@ -82,6 +85,9 @@
         <td class="text-center">{{ v.no_of_boxes }}</td>
         <td class="text-end">{{ v.bill_amount|default:"-" }}</td>
         <td class="text-end">{{ v.amount }}</td>
+        <td class="text-end">{% if v.auto_charge %}{{ v.auto_charge }}{% else %}-{% endif %}</td>
+        <td class="text-end">{% if v.extra_charge %}{{ v.extra_charge }}{% else %}-{% endif %}</td>
+        <td class="text-end fw-bold">{{ v.total_amount }}</td>
       </tr>
       {% endfor %}
       </tbody>
@@ -90,6 +96,9 @@
           <td colspan="4" class="text-end">TOTAL</td>
           <td class="text-center">{{ total_boxes }}</td>
           <td class="text-end">{{ total_bill_amount }}</td>
+          <td class="text-end">{{ total_amount }}</td>
+          <td class="text-end">{{ total_auto_charge }}</td>
+          <td class="text-end">{{ total_extra_charge }}</td>
           <td class="text-end">{{ total_amount }}</td>
         </tr>
       </tfoot>
